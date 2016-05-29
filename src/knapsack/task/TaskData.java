@@ -50,6 +50,14 @@ public class TaskData
         return bestSolution;
     }
 
+    public static void considerSolution(Solution solution)
+    {
+        if (bestSolution == null || solution.getCost() > bestSolution.getCost())
+        {
+            bestSolution = solution;
+        }
+    }
+
     public static Collection<Item> getBestClassItems()
     {
         return bestClassItems;

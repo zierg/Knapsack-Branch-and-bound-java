@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ItemsContainer
 {
@@ -12,6 +13,16 @@ public class ItemsContainer
         return items.stream().filter(
                 (item) -> !forbiddenClasses.contains(item.getClassId()) && !forbiddenItems.contains(item)).
                 findFirst().get();
+    }
+
+    public Collection<Item> getAllowedItems(Collection<Integer> forbiddenClasses)
+    {
+        return items.stream().filter((item) -> !forbiddenClasses.contains(item.getClassId())).collect(Collectors.toSet());
+    }
+
+    public Collection<Item> getItemsOfClass(int classId)
+    {
+        return items.stream().filter((item -> item.getClassId() == classId)).collect(Collectors.toSet());
     }
 
     public static ItemsContainerBuilder builder()
