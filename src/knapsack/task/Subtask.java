@@ -14,34 +14,24 @@ public class Subtask
 
     public Subtask()
     {
-        this(new HashSet<>(), new HashSet<>(), new ArrayList<>(), true);
+        this(new HashSet<>(), new HashSet<>(), new ArrayList<>());
     }
 
     public Subtask(Set<Integer> forbiddenClasses, Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack)
-    {
-        this(forbiddenClasses, forbiddenItems, itemsInKnapsack, true);
-    }
-
-    public Subtask(Set<Integer> forbiddenClasses, Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack, boolean calculateCeil)
     {
         this.forbiddenClasses = forbiddenClasses;
         this.forbiddenItems = forbiddenItems;
         this.itemsInKnapsack = itemsInKnapsack;
         Collection<Item> bestItems = TaskData.getBestClassItems().stream().filter((item -> !itemsInKnapsack.contains(item))).collect(Collectors.toSet());
-        if (calculateCeil)
-        {
-            for (Item item : itemsInKnapsack)
-            {
-                ceilCost += item.getCost();
-            }
-            for (Item item : bestItems)
-            {
-                ceilCost += item.getCost();
-            }
-        }
+
         for (Item item : itemsInKnapsack)
         {
+            ceilCost += item.getCost();
             totalWeight += item.getWeight();
+        }
+        for (Item item : bestItems)
+        {
+            ceilCost += item.getCost();
         }
     }
 
@@ -65,7 +55,7 @@ public class Subtask
 
     private void findAccurateSolution()
     {
-        findAccurateSolution(new HashSet<Item>(), 0);
+        findAccurateSolution(new HashSet<>(), 0);
     }
 
     private void findAccurateSolution(Collection<Item> pickedItems, double pickedWeight)
@@ -102,18 +92,6 @@ public class Subtask
         forbiddenClasses.remove(classId);
     }
 
-    private boolean arrayContains(int[] array, int key)
-    {
-        for (int value : array)
-        {
-            if (value == key)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void prepareChildrenSubtasks()
     {
         ItemsContainer items = TaskData.getItemsContainer();
@@ -145,11 +123,6 @@ public class Subtask
     public double getCeilCost()
     {
         return ceilCost;
-    }
-
-    public Collection<Item> getItemsInKnapsack()
-    {
-        return itemsInKnapsack;
     }
 
     private final Set<Integer> forbiddenClasses;
