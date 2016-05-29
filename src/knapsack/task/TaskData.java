@@ -35,14 +35,16 @@ public class TaskData
         subtasks.add(subtask);
     }
 
-    public static void removeSubtask(Subtask subtask)
+    public static boolean doSubtaskExist()
     {
-        subtasks.remove(subtask);
+        return !subtasks.isEmpty();
     }
 
     public static Subtask getBestSubtask()
     {
-        return subtasks.iterator().next();
+        Subtask best = subtasks.iterator().next();
+        subtasks.remove(best);
+        return best;
     }
 
     public static Solution getBestSolution()
@@ -107,6 +109,7 @@ public class TaskData
             itemsContainer = builder.build();
             classesAmount = classes.size();
             bestClassItems = bestClassItemsMap.values();
+            subtasks.add(new Subtask());
         }
         catch (Exception ex)
         {
