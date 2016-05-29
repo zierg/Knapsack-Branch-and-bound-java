@@ -1,7 +1,6 @@
 package knapsack;
 
 import knapsack.task.Solution;
-import knapsack.task.Subtask;
 import knapsack.task.TaskData;
 
 public class Main
