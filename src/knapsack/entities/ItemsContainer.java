@@ -14,7 +14,7 @@ public class ItemsContainer
         ).findFirst().get();
     }
 
-    public ItemsContainerBuilder builder()
+    public static ItemsContainerBuilder builder()
     {
         return new ItemsContainerBuilder();
     }
