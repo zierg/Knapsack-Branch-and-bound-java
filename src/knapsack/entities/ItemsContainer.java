@@ -7,11 +7,11 @@ import java.util.List;
 
 public class ItemsContainer
 {
-    public Item getBestItem(Collection<Integer> forbiddenClasses, Collection<Integer> forbiddenItems)
+    public Item getBestItem(Collection<Integer> forbiddenClasses, Collection<Item> forbiddenItems)
     {
         return items.stream().filter(
-                (item) -> !forbiddenClasses.contains(item.getClassId()) && !forbiddenItems.contains(item.getId())
-        ).findFirst().get();
+                (item) -> !forbiddenClasses.contains(item.getClassId()) && !forbiddenItems.contains(item)).
+                findFirst().get();
     }
 
     public static ItemsContainerBuilder builder()
