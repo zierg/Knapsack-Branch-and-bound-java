@@ -1,14 +1,22 @@
 package knapsack.entities;
 
+import knapsack.task.TaskData;
+
 public class Item
 {
-    public Item(int classId, double weight, double cost)
+    public Item(int classId, double weight, double cost, int classAmount)
     {
         this.id = idCounter++;
         this.classId = classId;
         this.weight = weight;
         this.cost = cost;
-        //this.costToWeight = cost / weight;
+        this.costToWeight = cost / weight;
+        double maxToClasses = TaskData.getMaxWeight() / (double) classAmount;
+        if (maxToClasses == weight)
+        {
+            maxToClasses += 0.01; // TODO: remove magic number
+        }
+        this.weightAndCapacity = 1d / Math.abs(maxToClasses - weight);
     }
 
     public int getId()
@@ -31,9 +39,14 @@ public class Item
         return cost;
     }
 
-    public double getGoodness()
+    public double getCostToWeight()
     {
-        return goodness;
+        return costToWeight;
+    }
+
+    public double getWeightAndCapacity()
+    {
+        return weightAndCapacity;
     }
 
     @Override
@@ -67,10 +80,12 @@ public class Item
     }
 
     private final int id;
+
     private final int classId;
     private final double weight;
     private final double cost;
-    private double goodness;
+    private final double costToWeight;
+    private final double weightAndCapacity;
 
     private static int idCounter = 1;
 }

@@ -89,15 +89,18 @@ public class TaskData
             Properties properties = new Properties();
             properties.load(input);
             maxWeight = Double.parseDouble(properties.getProperty("MAX_WEIGHT"));
+            classesAmount = Integer.parseInt(properties.getProperty("CLASS_AMOUNT"));
 
             StringTokenizer itemTokenizer = new StringTokenizer(properties.getProperty("ITEMS"), ";");
             ItemsContainer.ItemsContainerBuilder builder = ItemsContainer.builder();
 
-            Set<Integer> classes = new HashSet<>();
+            double minCostToWeight = Double.MAX_VALUE;
+            double minWeightAndCapacity = Double.MAX_VALUE;
+            double maxCostToWeight = - Double.MAX_VALUE;
+            double maxWeightAndCapacity = - Double.MAX_VALUE;
 
-            double totalCost = 0;
-            double totalWeight = 0;
             int itemsAmount = 0;
+            double totalCost = 0;
 
             while (itemTokenizer.hasMoreTokens())
             {
@@ -107,10 +110,13 @@ public class TaskData
                 double cost = Double.parseDouble(parameters.nextToken());
                 totalCost += cost;
                 double weight = Double.parseDouble(parameters.nextToken());
-                totalWeight += weight;
-                Item newItem = new Item(classId, weight, cost);
+                Item newItem = new Item(classId, weight, cost, classesAmount);
                 builder.addItem(newItem);
-                classes.add(classId);
+
+                if (newItem.getCostToWeight() < minCostToWeight) { minCostToWeight = newItem.getCostToWeight(); }
+                if (newItem.getCostToWeight() > maxCostToWeight) { maxCostToWeight = newItem.getCostToWeight(); }
+                if (newItem.getWeightAndCapacity() < minWeightAndCapacity) { minWeightAndCapacity = newItem.getWeightAndCapacity(); }
+                if (newItem.getWeightAndCapacity() > maxWeightAndCapacity) { maxWeightAndCapacity = newItem.getWeightAndCapacity(); }
 
                 Item currentBestItem = bestClassItemsMap.get(classId);
                 if (currentBestItem == null || currentBestItem.getCost() < newItem.getCost())
@@ -120,12 +126,7 @@ public class TaskData
             }
 
             double averageCost = totalCost / (double) itemsAmount;
-            double averageWeight = totalWeight / (double) itemsAmount;
-
-            System.out.println(String.format("average cost = %s, average weight = %s", averageCost, averageWeight));
-
-            itemsContainer = builder.build(averageCost, averageWeight);
-            classesAmount = classes.size();
+            itemsContainer = builder.build(minCostToWeight, maxCostToWeight, minWeightAndCapacity, maxWeightAndCapacity, averageCost);
             bestClassItems = bestClassItemsMap.values();
             subtasks.add(new Subtask());
         }
