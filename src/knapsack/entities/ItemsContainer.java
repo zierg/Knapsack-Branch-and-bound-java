@@ -8,11 +8,14 @@ import java.util.stream.Collectors;
 
 public class ItemsContainer
 {
-    public Item getBestItem(Collection<Integer> forbiddenClasses, Collection<Item> forbiddenItems)
+    public Item getBestItem(Collection<Integer> forbiddenClasses, Collection<Item> forbiddenItems, double weightLimit)
     {
         return items.stream().filter(
-                (item) -> !forbiddenClasses.contains(item.getClassId()) && !forbiddenItems.contains(item)).
-                findFirst().get();
+                (item) ->
+                        !forbiddenClasses.contains(item.getClassId())
+                        && !forbiddenItems.contains(item)
+                        && item.getWeight() <= weightLimit
+        ).findFirst().orElse(null);
     }
 
     public Collection<Item> getAllowedItems(Collection<Integer> forbiddenClasses)

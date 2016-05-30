@@ -46,9 +46,8 @@ public class Subtask
         {
             findAccurateSolution();
         }
-        else
+        else if (prepareChildrenSubtasks())
         {
-            prepareChildrenSubtasks();
             execute();
         }
     }
@@ -92,12 +91,21 @@ public class Subtask
         forbiddenClasses.remove(classId);
     }
 
-    private void prepareChildrenSubtasks()
+    /**
+     * Create left subtask and modify current subtask into right subtask
+     * @return true in successful case (item for separation has been found), false in other case
+     */
+    private boolean prepareChildrenSubtasks()
     {
         ItemsContainer items = TaskData.getItemsContainer();
-        Item item = items.getBestItem(forbiddenClasses, forbiddenItems);
+        Item item = items.getBestItem(forbiddenClasses, forbiddenItems, TaskData.getMaxWeight() - totalWeight);
+        if (item == null)
+        {
+            return false;
+        }
         createLeftSubtask(item);
         modifyToRightSubtask(item);
+        return true;
     }
 
     private void createLeftSubtask(Item item)
