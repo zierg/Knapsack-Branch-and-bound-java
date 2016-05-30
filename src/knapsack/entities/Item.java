@@ -8,7 +8,7 @@ public class Item
         this.classId = classId;
         this.weight = weight;
         this.cost = cost;
-        this.costToWeight = cost / weight;
+        //this.costToWeight = cost / weight;
     }
 
     public int getId()
@@ -31,9 +31,15 @@ public class Item
         return cost;
     }
 
-    public double getCostToWeight()
+    public double getGoodness()
     {
-        return costToWeight;
+        return goodness;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("Item %s (cl=%s, co=%s, w=%s)", id, classId, cost, weight);
     }
 
     @Override
@@ -64,7 +70,7 @@ public class Item
     private final int classId;
     private final double weight;
     private final double cost;
-    private final double costToWeight;
+    private double goodness;
 
     private static int idCounter = 1;
 }

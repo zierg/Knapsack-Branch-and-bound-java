@@ -10,13 +10,24 @@ public class Main
     {
         TaskData.load("task.ini");
 
+        long startTime = System.currentTimeMillis();
         while (TaskData.doSubtaskExist())
         {
             TaskData.getBestSubtask().execute();
         }
+        long finishTime = System.currentTimeMillis();
+
+        System.out.println(String.format("Spent time: %s ms", finishTime - startTime));
 
         Solution bestSolution = TaskData.getBestSolution();
 
+        if (bestSolution == null)
+        {
+            System.out.println("The best solution hasn't been found.");
+            return;
+        }
+
+        System.out.println(String.format("Max weight = %s", TaskData.getMaxWeight()));
         System.out.println("The best solution has been found.");
         System.out.println(String.format("Cost: %s", bestSolution.getCost()));
 

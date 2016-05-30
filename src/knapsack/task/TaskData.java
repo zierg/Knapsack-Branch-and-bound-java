@@ -12,6 +12,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class TaskData
 {
@@ -54,9 +55,13 @@ public class TaskData
 
     public static void considerSolution(Solution solution)
     {
+        //System.out.println("consider");
         if (bestSolution == null || solution.getCost() > bestSolution.getCost())
         {
+            //System.out.println("found new best!");
             bestSolution = solution;
+            Set<Subtask> bad = subtasks.stream().filter((subtask -> subtask.getCeilCost() <= solution.getCost())).collect(Collectors.toSet());
+            subtasks.removeAll(bad);
         }
     }
 
@@ -74,6 +79,7 @@ public class TaskData
      * The structure of the file should be as following
      * MAX_WEIGHT=%some double value%
      * ITEMS=class1 cost1 weight1;class2 cost2 weight2;class3 cost3 weight3 ...
+     *
      * @param filename filename
      */
     public static void load(String filename)
@@ -89,12 +95,19 @@ public class TaskData
 
             Set<Integer> classes = new HashSet<>();
 
+            double totalCost = 0;
+            double totalWeight = 0;
+            int itemsAmount = 0;
+
             while (itemTokenizer.hasMoreTokens())
             {
+                itemsAmount++;
                 StringTokenizer parameters = new StringTokenizer(itemTokenizer.nextToken(), " ");
                 int classId = Integer.parseInt(parameters.nextToken());
                 double cost = Double.parseDouble(parameters.nextToken());
+                totalCost += cost;
                 double weight = Double.parseDouble(parameters.nextToken());
+                totalWeight += weight;
                 Item newItem = new Item(classId, weight, cost);
                 builder.addItem(newItem);
                 classes.add(classId);
@@ -106,7 +119,12 @@ public class TaskData
                 }
             }
 
-            itemsContainer = builder.build();
+            double averageCost = totalCost / (double) itemsAmount;
+            double averageWeight = totalWeight / (double) itemsAmount;
+
+            System.out.println(String.format("average cost = %s, average weight = %s", averageCost, averageWeight));
+
+            itemsContainer = builder.build(averageCost, averageWeight);
             classesAmount = classes.size();
             bestClassItems = bestClassItemsMap.values();
             subtasks.add(new Subtask());

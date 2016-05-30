@@ -29,9 +29,19 @@ public class Subtask
             ceilCost += item.getCost();
             totalWeight += item.getWeight();
         }
+
+        double guessItemsCost = 0;
+        double guessItemsWeight = 0;
         for (Item item : bestItems)
         {
-            ceilCost += item.getCost();
+            guessItemsCost += item.getCost();
+            guessItemsWeight += item.getWeight();
+            //ceilCost += item.getCost();
+        }
+        if (guessItemsWeight > 0)
+        {
+            costToWeightGuess = guessItemsCost/guessItemsWeight;
+            ceilCost += costToWeightGuess * (TaskData.getMaxWeight() - totalWeight);
         }
     }
 
@@ -59,30 +69,37 @@ public class Subtask
 
     private void findAccurateSolution(Collection<Item> pickedItems, double pickedWeight)
     {
+
         ItemsContainer items = TaskData.getItemsContainer();
         Collection<Item> allowedItems = items.getAllowedItems(forbiddenClasses);
         int classId = allowedItems.iterator().next().getClassId();
-        Collection<Item> currentItems = items.getItemsOfClass(classId);
-        boolean lastClass = TaskData.getClassesAmount() - forbiddenClasses.size() == 1;
+        Collection<Item> classItems = items.getItemsOfClass(classId);
 
+        boolean lastClass = TaskData.getClassesAmount() - forbiddenClasses.size() == 1;
         if (lastClass)
         {
             Item bestItem = null;
-            for (Item item : currentItems)
+            for (Item item : classItems)
             {
-                if (bestItem == null || (item.getCost() > bestItem.getCost() && totalWeight + pickedWeight + item.getWeight() <= TaskData.getMaxWeight()))
+                if ((bestItem == null || item.getCost() > bestItem.getCost()) && totalWeight + pickedWeight + item.getWeight() <= TaskData.getMaxWeight())
                 {
                     bestItem = item;
                 }
             }
-            Set<Item> knapsackPickedItems = new HashSet<>(pickedItems);
+            
+            if (bestItem == null)
+            {
+                return;
+            }
+            Set<Item> knapsackPickedItems = new HashSet<>(itemsInKnapsack);
+            knapsackPickedItems.addAll(pickedItems);
             knapsackPickedItems.add(bestItem);
             TaskData.considerSolution(new Solution(knapsackPickedItems));
             return;
         }
 
         forbiddenClasses.add(classId);
-        for (Item item : currentItems)
+        for (Item item : classItems)
         {
             pickedItems.add(item);
             findAccurateSolution(pickedItems, pickedWeight + item.getWeight());
@@ -122,10 +139,7 @@ public class Subtask
     {
         forbiddenClasses.add(item.getClassId());
         itemsInKnapsack.add(item);
-        Item bestClassItem = TaskData.getBestClassItemsMap().get(item.getClassId());
-        ceilCost += item.getCost() - bestClassItem.getCost();
-        totalWeight += item.getWeight() - bestClassItem.getWeight();
-
+        totalWeight += item.getWeight();
     }
 
     public double getCeilCost()
@@ -141,5 +155,7 @@ public class Subtask
 
     private Collection<Item> itemsInKnapsack;
 
-    private static final int MIN_CLASSES_AMOUNT = 3;
+    private double costToWeightGuess;
+
+    private static final int MIN_CLASSES_AMOUNT = 2;
 }

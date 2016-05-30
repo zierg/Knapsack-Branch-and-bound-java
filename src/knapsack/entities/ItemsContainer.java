@@ -41,9 +41,23 @@ public class ItemsContainer
             return this;
         }
 
-        public ItemsContainer build()
+        public ItemsContainer build(double averageCost, double averageWeight)
         {
-            Collections.sort(itemsContainer.items, (item1, item2) -> Double.compare(item2.getCostToWeight(), item1.getCostToWeight()));
+            Collections.sort(itemsContainer.items, (item1, item2) ->
+                    Double.compare(
+                            item2.getCost() / averageCost + averageWeight / item2.getWeight()
+                            , item1.getCost() / averageCost + averageWeight / item1.getWeight()
+                    )
+                             /*{
+                                 int comparison = Double.compare(item2.getGoodness(), item1.getGoodness());
+                                 if (comparison == 0)
+                                 {
+                                     comparison = Double.compare(item2.getCost(), item1.getCost());
+                                 }
+                                 return comparison;
+                             }*/
+            );
+            System.out.println(itemsContainer.items);
             return itemsContainer;
         }
 
