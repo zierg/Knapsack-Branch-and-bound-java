@@ -4,6 +4,7 @@ import knapsack.task.TaskData;
 
 public class Item
 {
+
     public Item(int classId, double weight, double cost, int classAmount)
     {
         this.id = idCounter++;

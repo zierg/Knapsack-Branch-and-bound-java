@@ -1,12 +1,12 @@
 package knapsack.task;
 
+import javafx.util.Pair;
 import knapsack.entities.Item;
 import knapsack.entities.ItemsContainer;
 
 import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -26,6 +26,26 @@ public class TaskData
         return classesAmount;
     }
 
+    public static int getBadSolutionsAmount()
+    {
+        return badSolutionsAmount;
+    }
+
+    public static void setBadSolutionsAmount(int badSolutionsAmount)
+    {
+        TaskData.badSolutionsAmount = badSolutionsAmount;
+    }
+
+    public static int getGoodSolutionsAmount()
+    {
+        return goodSolutionsAmount;
+    }
+
+    public static void setGoodSolutionsAmount(int goodSolutionsAmount)
+    {
+        TaskData.goodSolutionsAmount = goodSolutionsAmount;
+    }
+
     public static double getMaxWeight()
     {
         return maxWeight;
@@ -33,7 +53,10 @@ public class TaskData
 
     public static void addSubtask(Subtask subtask)
     {
-        subtasks.add(subtask);
+        if (bestSolution == null || subtask.getCeilCost() > bestSolution.getCost())
+        {
+            subtasks.add(subtask);
+        }
     }
 
     public static boolean doSubtaskExist()
@@ -55,13 +78,20 @@ public class TaskData
 
     public static void considerSolution(Solution solution)
     {
-        //System.out.println("consider");
         if (bestSolution == null || solution.getCost() > bestSolution.getCost())
         {
-            System.out.println("found new best!");
             bestSolution = solution;
             Set<Subtask> bad = subtasks.stream().filter((subtask -> subtask.getCeilCost() <= solution.getCost())).collect(Collectors.toSet());
+            System.out.println("Items = " + solution.getItems().stream().sorted((item1, item2) -> Integer.compare(item1.getClassId(), item2.getClassId())).collect(Collectors.toList()));
+            System.out.println("Cost = " + solution.getCost());
+            System.out.println("Bad size = " + bad.size());
+            System.out.println("Current bad solutions = " + badSolutionsAmount);
             subtasks.removeAll(bad);
+            goodSolutionsAmount++;
+        }
+        else
+        {
+            badSolutionsAmount++;
         }
     }
 
@@ -95,26 +125,35 @@ public class TaskData
             ItemsContainer.ItemsContainerBuilder builder = ItemsContainer.builder();
 
             double minCostToWeight = Double.MAX_VALUE;
+            double minCost = Double.MAX_VALUE;
             double minWeightAndCapacity = Double.MAX_VALUE;
             double maxCostToWeight = - Double.MAX_VALUE;
+            double maxCost = - Double.MAX_VALUE;
             double maxWeightAndCapacity = - Double.MAX_VALUE;
 
-            int itemsAmount = 0;
-            double totalCost = 0;
+            Map<Pair<Integer, Double>, Double> bestClassCosts = new HashMap<>();
 
             while (itemTokenizer.hasMoreTokens())
             {
-                itemsAmount++;
                 StringTokenizer parameters = new StringTokenizer(itemTokenizer.nextToken(), " ");
                 int classId = Integer.parseInt(parameters.nextToken());
                 double cost = Double.parseDouble(parameters.nextToken());
-                totalCost += cost;
                 double weight = Double.parseDouble(parameters.nextToken());
+
+                Pair<Integer, Double> pair = new Pair<>(classId, cost);
+                if (bestClassCosts.containsKey(pair) && bestClassCosts.get(pair) <= weight)
+                {
+                    continue;
+                }
+                bestClassCosts.put(pair, weight);
+
                 Item newItem = new Item(classId, weight, cost, classesAmount);
                 builder.addItem(newItem);
 
                 if (newItem.getCostToWeight() < minCostToWeight) { minCostToWeight = newItem.getCostToWeight(); }
                 if (newItem.getCostToWeight() > maxCostToWeight) { maxCostToWeight = newItem.getCostToWeight(); }
+                if (cost < minCost) { minCost = cost; }
+                if (cost > maxCost) { maxCost = cost; }
                 if (newItem.getWeightAndCapacity() < minWeightAndCapacity) { minWeightAndCapacity = newItem.getWeightAndCapacity(); }
                 if (newItem.getWeightAndCapacity() > maxWeightAndCapacity) { maxWeightAndCapacity = newItem.getWeightAndCapacity(); }
 
@@ -125,8 +164,7 @@ public class TaskData
                 }
             }
 
-            double averageCost = totalCost / (double) itemsAmount;
-            itemsContainer = builder.build(minCostToWeight, maxCostToWeight, minWeightAndCapacity, maxWeightAndCapacity);
+            itemsContainer = builder.build(minCostToWeight, maxCostToWeight, minWeightAndCapacity, maxWeightAndCapacity, minCost, maxCost);
             bestClassItems = bestClassItemsMap.values();
             subtasks.add(new Subtask());
         }
@@ -144,6 +182,9 @@ public class TaskData
     private static final Set<Subtask> subtasks = new TreeSet<>((task1, task2) -> Double.compare(task2.getCeilCost(), task1.getCeilCost()));
     private static final Map<Integer, Item> bestClassItemsMap = new HashMap<>();
     private static Collection<Item> bestClassItems;
+
+    private static int goodSolutionsAmount = 0;
+    private static int badSolutionsAmount = 0;
 
     private TaskData() {}
 }

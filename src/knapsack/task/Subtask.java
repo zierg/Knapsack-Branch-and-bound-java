@@ -5,10 +5,10 @@ import knapsack.entities.ItemsContainer;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class Subtask
@@ -24,7 +24,7 @@ public class Subtask
         this.forbiddenClasses = forbiddenClasses;
         this.forbiddenItems = forbiddenItems;
         this.itemsInKnapsack = itemsInKnapsack;
-        Collection<Item> bestItems = TaskData.getBestClassItems().stream().filter((item -> !itemsInKnapsack.contains(item))).collect(Collectors.toSet());
+        Collection<Item> bestItems = TaskData.getBestClassItems().stream().filter((item -> !itemsInKnapsack.contains(item) && !forbiddenClasses.contains(item.getClassId()))).collect(Collectors.toSet());
 
         for (Item item : itemsInKnapsack)
         {
@@ -32,34 +32,19 @@ public class Subtask
             totalWeight += item.getWeight();
         }
 
-
-        Map<Integer, Double> classCostToWeightMap = new HashMap<>();
-        Map<Integer, Integer> classItemsAmountMap = new HashMap<>();
         double itemsWeight = 0;
         for (Item item : bestItems)
         {
-            int classId = item.getClassId();
-            Double classCostToWeight = classCostToWeightMap.get(classId);
-            if (classCostToWeight == null)
-            {
-                classCostToWeightMap.put(classId, item.getCostToWeight());
-                classItemsAmountMap.put(classId, 1);
-            }
-            else
-            {
-                classCostToWeightMap.put(classId, item.getCostToWeight() + classCostToWeight);
-                classItemsAmountMap.put(classId, classItemsAmountMap.get(classId) + 1);
-            }
             itemsWeight += item.getWeight();
             ceilCost += item.getCost();
         }
         if (itemsWeight + totalWeight > TaskData.getMaxWeight())
         {
-            for (Integer classId : classCostToWeightMap.keySet())
+            double difference = itemsWeight + totalWeight - TaskData.getMaxWeight();
+            for (Item item : bestItems)
             {
-                double classCostToWeight = classCostToWeightMap.get(classId);
-                double classItemsAmount = classItemsAmountMap.get(classId);
-                ceilCost -= classCostToWeight / classItemsAmount;
+                double classCostToWeight = item.getCostToWeight();
+                ceilCost -= classCostToWeight * (difference / item.getWeight());
             }
         }
         else
@@ -175,7 +160,7 @@ public class Subtask
     private final Set<Integer> forbiddenClasses;
     private final Set<Item> forbiddenItems;
 
-    private double ceilCost;
+    private double ceilCost = 0;
     private double totalWeight;
 
     private Collection<Item> itemsInKnapsack;

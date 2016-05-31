@@ -22,12 +22,12 @@ public class ItemsContainer
 
     public Collection<Item> getAllowedItems(Collection<Integer> forbiddenClasses)
     {
-        return items.stream().filter((item) -> !forbiddenClasses.contains(item.getClassId())).collect(Collectors.toSet());
+        return items.stream().filter((item) -> !forbiddenClasses.contains(item.getClassId())).collect(Collectors.toList());
     }
 
     public Collection<Item> getItemsOfClass(int classId)
     {
-        return items.stream().filter((item -> item.getClassId() == classId)).collect(Collectors.toSet());
+        return items.stream().filter((item -> item.getClassId() == classId)).collect(Collectors.toList());
     }
 
     public static ItemsContainerBuilder builder()
@@ -44,29 +44,17 @@ public class ItemsContainer
         }
 
         // TODO: refactor this terrible method
-        public ItemsContainer build(double minCostToWeight, double maxCostToWeight, double minWeightAndCapacity, double maxWeightAndCapacity)
+        public ItemsContainer build(double minCostToWeight, double maxCostToWeight, double minWeightAndCapacity, double maxWeightAndCapacity, double minCost, double maxCost)
         {
             Collections.sort(itemsContainer.items, (item1, item2) ->
             {
-                double costSummand1 = normalizeDouble(item1.getCostToWeight(), minCostToWeight, maxCostToWeight);
+                double costSummand1 = normalizeDouble(item1.getCostToWeight(), minCostToWeight, maxCostToWeight) + normalizeDouble(item1.getCost(), minCost, maxCost);
                 double weightSummand1 = normalizeDouble(item1.getWeightAndCapacity(), minWeightAndCapacity, maxWeightAndCapacity);
-                double costSummand2 = normalizeDouble(item2.getCostToWeight(), minCostToWeight, maxCostToWeight);
+                double costSummand2 = normalizeDouble(item2.getCostToWeight(), minCostToWeight, maxCostToWeight) + normalizeDouble(item2.getCost(), minCost, maxCost);
                 double weightSummand2 = normalizeDouble(item2.getWeightAndCapacity(), minWeightAndCapacity, maxWeightAndCapacity);
 
                 return Double.compare(costSummand2 + weightSummand2, costSummand1 + weightSummand1);
             }
-                    /*Double.compare(
-                            item2.getCost() / averageCost + averageWeight / item2.getWeight()
-                            , item1.getCost() / averageCost + averageWeight / item1.getWeight()
-                    )*/
-                             /*{
-                                 int comparison = Double.compare(item2.getGoodness(), item1.getGoodness());
-                                 if (comparison == 0)
-                                 {
-                                     comparison = Double.compare(item2.getCost(), item1.getCost());
-                                 }
-                                 return comparison;
-                             }*/
             );
             System.out.println(itemsContainer.items);
             return itemsContainer;
