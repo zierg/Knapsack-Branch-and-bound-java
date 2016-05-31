@@ -58,7 +58,7 @@ public class TaskData
         //System.out.println("consider");
         if (bestSolution == null || solution.getCost() > bestSolution.getCost())
         {
-            //System.out.println("found new best!");
+            System.out.println("found new best!");
             bestSolution = solution;
             Set<Subtask> bad = subtasks.stream().filter((subtask -> subtask.getCeilCost() <= solution.getCost())).collect(Collectors.toSet());
             subtasks.removeAll(bad);
@@ -126,7 +126,7 @@ public class TaskData
             }
 
             double averageCost = totalCost / (double) itemsAmount;
-            itemsContainer = builder.build(minCostToWeight, maxCostToWeight, minWeightAndCapacity, maxWeightAndCapacity, averageCost);
+            itemsContainer = builder.build(minCostToWeight, maxCostToWeight, minWeightAndCapacity, maxWeightAndCapacity);
             bestClassItems = bestClassItemsMap.values();
             subtasks.add(new Subtask());
         }

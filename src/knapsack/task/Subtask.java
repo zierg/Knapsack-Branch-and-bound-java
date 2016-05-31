@@ -32,17 +32,29 @@ public class Subtask
 
         double guessItemsCost = 0;
         double guessItemsWeight = 0;
+        double bestItemsTotalCost = 0;
         for (Item item : bestItems)
         {
             guessItemsCost += item.getCost();
             guessItemsWeight += item.getWeight();
             //ceilCost += item.getCost();
+            bestItemsTotalCost += item.getCost();
         }
         if (guessItemsWeight > 0)
         {
             costToWeightGuess = guessItemsCost/guessItemsWeight;
             ceilCost += costToWeightGuess * (TaskData.getMaxWeight() - totalWeight);
         }
+        /*if (bestItemsTotalCost < costToWeightGuess * (TaskData.getMaxWeight() - totalWeight))
+        {
+            System.out.println("---------- ATTENTION ----------");
+            System.out.println("bestItemsTotalCost = " + bestItemsTotalCost);
+            System.out.println("costToWeightGuess * ... = " + costToWeightGuess * (TaskData.getMaxWeight() - totalWeight));
+            System.out.println(String.format("Items in knapsack = %s", itemsInKnapsack));
+            System.out.println(String.format("Best items = %s", bestItems));
+            System.out.println(String.format("Forbidden classes = %s", forbiddenClasses));
+            System.out.println(String.format("Forbidden items = %s", forbiddenItems));
+        }*/
     }
 
     public void execute()
