@@ -5,7 +5,9 @@ import knapsack.entities.ItemsContainer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,36 +32,47 @@ public class Subtask
             totalWeight += item.getWeight();
         }
 
-        double guessItemsCost = 0;
-        double guessItemsWeight = 0;
-        double bestItemsTotalCost = 0;
+
+        Map<Integer, Double> classCostToWeightMap = new HashMap<>();
+        Map<Integer, Integer> classItemsAmountMap = new HashMap<>();
+        double itemsWeight = 0;
         for (Item item : bestItems)
         {
-            guessItemsCost += item.getCost();
-            guessItemsWeight += item.getWeight();
-            //ceilCost += item.getCost();
-            bestItemsTotalCost += item.getCost();
+            int classId = item.getClassId();
+            Double classCostToWeight = classCostToWeightMap.get(classId);
+            if (classCostToWeight == null)
+            {
+                classCostToWeightMap.put(classId, item.getCostToWeight());
+                classItemsAmountMap.put(classId, 1);
+            }
+            else
+            {
+                classCostToWeightMap.put(classId, item.getCostToWeight() + classCostToWeight);
+                classItemsAmountMap.put(classId, classItemsAmountMap.get(classId) + 1);
+            }
+            itemsWeight += item.getWeight();
+            ceilCost += item.getCost();
         }
-        if (guessItemsWeight > 0)
+        if (itemsWeight + totalWeight > TaskData.getMaxWeight())
         {
-            costToWeightGuess = guessItemsCost/guessItemsWeight;
-            ceilCost += costToWeightGuess * (TaskData.getMaxWeight() - totalWeight);
+            for (Integer classId : classCostToWeightMap.keySet())
+            {
+                double classCostToWeight = classCostToWeightMap.get(classId);
+                double classItemsAmount = classItemsAmountMap.get(classId);
+                ceilCost -= classCostToWeight / classItemsAmount;
+            }
         }
-        /*if (bestItemsTotalCost < costToWeightGuess * (TaskData.getMaxWeight() - totalWeight))
+        else
         {
-            System.out.println("---------- ATTENTION ----------");
-            System.out.println("bestItemsTotalCost = " + bestItemsTotalCost);
-            System.out.println("costToWeightGuess * ... = " + costToWeightGuess * (TaskData.getMaxWeight() - totalWeight));
-            System.out.println(String.format("Items in knapsack = %s", itemsInKnapsack));
-            System.out.println(String.format("Best items = %s", bestItems));
-            System.out.println(String.format("Forbidden classes = %s", forbiddenClasses));
-            System.out.println(String.format("Forbidden items = %s", forbiddenItems));
-        }*/
+            this.itemsInKnapsack.addAll(bestItems);
+            TaskData.considerSolution(new Solution(this.itemsInKnapsack));
+            solved = true;
+        }
     }
 
     public void execute()
     {
-        if (totalWeight > TaskData.getMaxWeight())
+        if (solved || totalWeight > TaskData.getMaxWeight())
         {
             return;
         }
@@ -167,7 +180,7 @@ public class Subtask
 
     private Collection<Item> itemsInKnapsack;
 
-    private double costToWeightGuess;
+    private boolean solved = false;
 
     private static final int MIN_CLASSES_AMOUNT = 2;
 }
