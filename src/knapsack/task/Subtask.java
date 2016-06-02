@@ -6,25 +6,33 @@ import knapsack.entities.ItemsContainer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+
+import static knapsack.Logger.log;
 
 public class Subtask
 {
 
     public Subtask()
     {
-        this(new HashSet<>(), new HashSet<>(), new ArrayList<>());
+        this(new HashSet<>(), new ArrayList<>());
     }
 
-    public Subtask(Set<Integer> forbiddenClasses, Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack)
+    public Subtask(Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack)
     {
-        this.forbiddenClasses = forbiddenClasses;
+        log("Subtask creation started");
         this.forbiddenItems = forbiddenItems;
         this.itemsInKnapsack = itemsInKnapsack;
-        Collection<Item> bestItems = TaskData.getBestClassItems().stream().filter((item -> !itemsInKnapsack.contains(item) && !forbiddenClasses.contains(item.getClassId()))).collect(Collectors.toSet());
+        log("forbidden = %s", forbiddenItems);
+        log("knapsack = %s", itemsInKnapsack);
+        Collection<Item> bestItems = TaskData.getItemsContainer().getBestItems(forbiddenItems, itemsInKnapsack);
+        log("Expensive items = %s", bestItems);
+        if (bestItems.isEmpty())
+        {
+            TaskData.considerSolution(new Solution(this.itemsInKnapsack));
+            solved = true;
+            return;
+        }
 
         for (Item item : itemsInKnapsack)
         {
@@ -35,23 +43,20 @@ public class Subtask
         double itemsWeight = 0;
         for (Item item : bestItems)
         {
-            itemsWeight += item.getWeight();
-            ceilCost += item.getCost();
-        }
-        if (itemsWeight + totalWeight > TaskData.getMaxWeight())
-        {
-            double difference = itemsWeight + totalWeight - TaskData.getMaxWeight();
-            for (Item item : bestItems)
+            if (totalWeight + itemsWeight + item.getWeight() <= TaskData.getMaxWeight())
             {
-                double classCostToWeight = item.getCostToWeight();
-                ceilCost -= classCostToWeight * (difference / item.getWeight());
+
+                itemsWeight += item.getWeight();
+                ceilCost += item.getCost();
             }
-        }
-        else
-        {
-            this.itemsInKnapsack.addAll(bestItems);
-            TaskData.considerSolution(new Solution(this.itemsInKnapsack));
-            solved = true;
+            else
+            {
+                double fit = TaskData.getMaxWeight() - totalWeight - itemsWeight;
+
+                ceilCost += item.getCost() * fit / item.getWeight();
+                break;
+            }
+
         }
     }
 
@@ -61,14 +66,19 @@ public class Subtask
         {
             return;
         }
-
-        if (TaskData.getClassesAmount() - forbiddenClasses.size() <= MIN_CLASSES_AMOUNT)
+        if (totalWeight == TaskData.getMaxWeight())
         {
-            findAccurateSolution();
+            TaskData.considerSolution(new Solution(this.itemsInKnapsack));
+            return;
         }
-        else if (prepareChildrenSubtasks())
+
+        if (prepareChildrenSubtasks())
         {
             execute();
+        }
+        else
+        {
+            TaskData.considerSolution(new Solution(itemsInKnapsack));
         }
     }
 
@@ -79,28 +89,18 @@ public class Subtask
 
     private void findAccurateSolution(Collection<Item> pickedItems, double pickedWeight)
     {
-
         ItemsContainer items = TaskData.getItemsContainer();
-        Collection<Item> allowedItems = items.getAllowedItems(forbiddenClasses);
-        int classId = allowedItems.iterator().next().getClassId();
-        Collection<Item> classItems = items.getItemsOfClass(classId);
-
-        boolean lastClass = TaskData.getClassesAmount() - forbiddenClasses.size() == 1;
-        if (lastClass)
+        double weightLimit = TaskData.getMaxWeight() - totalWeight - pickedWeight;
+        Collection<Item> allowedItems = items.getAllowedItems(forbiddenItems, pickedItems, weightLimit);
+        if (allowedItems.isEmpty())
         {
-            Item bestItem = null;
-            for (Item item : classItems)
-            {
-                if ((bestItem == null || item.getCost() > bestItem.getCost()) && totalWeight + pickedWeight + item.getWeight() <= TaskData.getMaxWeight())
-                {
-                    bestItem = item;
-                }
-            }
-            
-            if (bestItem == null)
-            {
-                return;
-            }
+            return;
+        }
+
+        boolean lastItem = allowedItems.size() == 1;
+        if (lastItem)
+        {
+            Item bestItem = allowedItems.iterator().next();
             Set<Item> knapsackPickedItems = new HashSet<>(itemsInKnapsack);
             knapsackPickedItems.addAll(pickedItems);
             knapsackPickedItems.add(bestItem);
@@ -108,14 +108,12 @@ public class Subtask
             return;
         }
 
-        forbiddenClasses.add(classId);
-        for (Item item : classItems)
+        for (Item item : allowedItems)
         {
             pickedItems.add(item);
             findAccurateSolution(pickedItems, pickedWeight + item.getWeight());
             pickedItems.remove(item);
         }
-        forbiddenClasses.remove(classId);
     }
 
     /**
@@ -125,7 +123,8 @@ public class Subtask
     private boolean prepareChildrenSubtasks()
     {
         ItemsContainer items = TaskData.getItemsContainer();
-        Item item = items.getBestItem(forbiddenClasses, forbiddenItems, TaskData.getMaxWeight() - totalWeight);
+        Item item = items.getBestItem(forbiddenItems, itemsInKnapsack, TaskData.getMaxWeight() - totalWeight);
+        log("Selected best item = %s", item);
         if (item == null)
         {
             return false;
@@ -137,17 +136,15 @@ public class Subtask
 
     private void createLeftSubtask(Item item)
     {
-        Set<Integer> leftSubtaskClasses = new HashSet<>(forbiddenClasses);
         Set<Item> leftSubtaskForbiddenItems = new HashSet<>(forbiddenItems);
         Set<Item> leftSubtaskItemsInKnapsack = new HashSet<>(itemsInKnapsack);
         leftSubtaskForbiddenItems.add(item);
-        Subtask leftSubtask = new Subtask(leftSubtaskClasses, leftSubtaskForbiddenItems, leftSubtaskItemsInKnapsack);
+        Subtask leftSubtask = new Subtask(leftSubtaskForbiddenItems, leftSubtaskItemsInKnapsack);
         TaskData.addSubtask(leftSubtask);
     }
 
     private void modifyToRightSubtask(Item item)
     {
-        forbiddenClasses.add(item.getClassId());
         itemsInKnapsack.add(item);
         totalWeight += item.getWeight();
     }
@@ -157,15 +154,14 @@ public class Subtask
         return ceilCost;
     }
 
-    private final Set<Integer> forbiddenClasses;
     private final Set<Item> forbiddenItems;
 
     private double ceilCost = 0;
     private double totalWeight;
 
-    private Collection<Item> itemsInKnapsack;
+    private final Collection<Item> itemsInKnapsack;
 
     private boolean solved = false;
 
-    private static final int MIN_CLASSES_AMOUNT = 2;
+    private static final int MIN_ITEMS_AMOUNT = 4;
 }

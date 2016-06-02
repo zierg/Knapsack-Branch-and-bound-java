@@ -1,11 +1,19 @@
 package knapsack;
 
+import knapsack.entities.Item;
 import knapsack.task.Solution;
+import knapsack.task.Subtask;
 import knapsack.task.TaskData;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static knapsack.Logger.log;
 
 public class Main
 {
@@ -16,15 +24,16 @@ public class Main
     {
         if (GENERATE_FILE)
         {
-            generateRandomFile(20, 20, 150);
-            exit();
+            generateRandomFile(4000, 2500);
+            System.out.println("A new file has been generated.");
         }
         TaskData.load("task.ini");
 
         long startTime = System.currentTimeMillis();
         while (TaskData.doSubtaskExist())
         {
-            TaskData.getBestSubtask().execute();
+            Subtask best = TaskData.getBestSubtask();
+            best.execute();
         }
         long finishTime = System.currentTimeMillis();
 
@@ -45,41 +54,59 @@ public class Main
         System.out.println("The best solution has been found.");
         System.out.println(String.format("Cost: %s", bestSolution.getCost()));
 
-        final double [] solutionWeight = {0};
+        double solutionWeight = 0;
 
-        bestSolution.getItems().stream()
-                .sorted((item1, item2) -> Integer.compare(item1.getClassId(), item2.getClassId()))
-                .forEachOrdered(
-                        (item ->
-                        {
-                            System.out.println(String.format("Item %s: class = %s, cost = %s, weight = %s"
-                                    , item.getId()
-                                    , item.getClassId()
-                                    , item.getCost()
-                                    , item.getWeight()
-                            ));
-                            solutionWeight[0] += item.getWeight();
-                        }
-                        )
-                );
+        List<Item> sorted = bestSolution.getItems().stream().sorted((item1, item2) -> Integer.compare(item1.getRealId(), item2.getRealId())).collect(Collectors.toList());
+        Item previousItem = sorted.get(0);
+        int itemAmount = 0;
+        int previousRealId = previousItem.getRealId();
+        for (Item item : sorted)
+        {
+            solutionWeight += item.getWeight();
 
-        System.out.println("Solution weight = " + solutionWeight[0]);
+            if (item.getRealId() == previousRealId)
+            {
+                itemAmount++;
+                continue;
+            }
+            printItem(previousItem, itemAmount);
+            itemAmount = 1;
+            previousRealId = item.getRealId();
+            previousItem = item;
+        }
+        printItem(previousItem, itemAmount);
+
+        System.out.println("Solution weight = " + solutionWeight);
     }
 
-    private static void generateRandomFile(int classesAmount, int itemsInClassAmount, double maxWeight) throws IOException
+    private static void printItem(Item item, int amount)
     {
+        System.out.println(String.format("Item %s (%s): cost = %s, weight = %s. Total cost = %s, weight = %s"
+                , item.getRealId()
+                , amount
+                , item.getCost()
+                , item.getWeight()
+                , item.getCost() * (double) amount
+                , item.getWeight() * (double) amount
+        ));
+    }
+
+    private static void generateRandomFile(int itemsAmount, double maxWeight) throws IOException
+    {
+        DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
+        otherSymbols.setDecimalSeparator('.');
+        DecimalFormat myFormatter = new DecimalFormat("###", otherSymbols);
         final double COST_MAX = 30;
-        final double WEIGHT_MAX = maxWeight / classesAmount * 5;
-        StringBuilder b = new StringBuilder("CLASS_AMOUNT=").append(classesAmount).append("\nMAX_WEIGHT=").append(maxWeight).append("\nITEMS=");
-        for (int classId = 0; classId < classesAmount; classId++)
+        final double WEIGHT_MAX = maxWeight / ((double) itemsAmount) * 20;
+        StringBuilder b = new StringBuilder("MAX_WEIGHT=").append(maxWeight).append("\nITEMS=");
+        for (int i = 0; i < itemsAmount; i++)
         {
-            for (int j = 0; j < itemsInClassAmount; j++)
-            {
-                double cost = 0.1 + Math.random() * COST_MAX;
-                double weight = 0.1 + Math.random() * WEIGHT_MAX;
-                b.append(classId).append(" ").append(cost).append(" ").append(weight).append(";");
-            }
+            int limit = (int) (Math.random() * 10d + 1d);
+            double cost = 1 + Math.random() * COST_MAX;
+            double weight = 1 + Math.random() * WEIGHT_MAX;
+            b.append(limit).append(" ").append(myFormatter.format(cost)).append(" ").append(myFormatter.format(weight)).append(";");
         }
+
         File file = new File("task.ini");
         if (!file.exists())
         {

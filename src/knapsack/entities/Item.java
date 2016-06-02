@@ -1,23 +1,28 @@
 package knapsack.entities;
 
-import knapsack.task.TaskData;
-
 public class Item
 {
 
-    public Item(int classId, double weight, double cost, int classAmount)
+    // TODO: remove after all tests
+    public Item(int id)
+    {
+        this(0,0,false);
+    }
+
+    public Item(double weight, double cost, boolean next)
     {
         this.id = idCounter++;
-        this.classId = classId;
+        if (next)
+        {
+            realId = realIdCounter++;
+        }
+        else
+        {
+            realId = realIdCounter;
+        }
         this.weight = weight;
         this.cost = cost;
         this.costToWeight = cost / weight;
-        double maxToClasses = TaskData.getMaxWeight() / (double) classAmount;
-        if (maxToClasses == weight)
-        {
-            maxToClasses += 0.01; // TODO: remove magic number
-        }
-        this.weightAndCapacity = 1d / Math.abs(maxToClasses - weight);
     }
 
     public int getId()
@@ -25,9 +30,9 @@ public class Item
         return id;
     }
 
-    public int getClassId()
+    public int getRealId()
     {
-        return classId;
+        return realId;
     }
 
     public double getWeight()
@@ -45,15 +50,11 @@ public class Item
         return costToWeight;
     }
 
-    public double getWeightAndCapacity()
-    {
-        return weightAndCapacity;
-    }
 
     @Override
     public String toString()
     {
-        return String.format("Item %s (cl=%s, co=%s, w=%s)", id, classId, cost, weight);
+        return String.format("Item %s (co=%s, w=%s)", id,  cost, weight);
     }
 
     @Override
@@ -81,12 +82,12 @@ public class Item
     }
 
     private final int id;
+    private final int realId;
 
-    private final int classId;
     private final double weight;
     private final double cost;
     private final double costToWeight;
-    private final double weightAndCapacity;
 
     private static int idCounter = 1;
+    private static int realIdCounter = 1;
 }

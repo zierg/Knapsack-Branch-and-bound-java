@@ -1,38 +1,46 @@
 package knapsack.entities;
 
-import knapsack.task.TaskData;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static knapsack.Logger.log;
 
 public class ItemsContainer
 {
-    public Item getBestItem(Collection<Integer> forbiddenClasses, Collection<Item> forbiddenItems, double weightLimit)
+    public Item getBestItem(Collection<Item> forbiddenItems, Collection<Item> pickedItems, double weightLimit)
     {
         return items.stream().filter(
                 (item) ->
-                        !forbiddenClasses.contains(item.getClassId())
-                        && !forbiddenItems.contains(item)
-                        && item.getWeight() <= weightLimit
+                        !forbiddenItems.contains(item) && !pickedItems.contains(item) && item.getWeight() <= weightLimit
         ).findFirst().orElse(null);
     }
 
-    public Collection<Item> getAllowedItems(Collection<Integer> forbiddenClasses)
+    public int getItemsAmount()
     {
-        return items.stream().filter((item) -> !forbiddenClasses.contains(item.getClassId())).collect(Collectors.toList());
+        return itemsAmount;
     }
 
-    public Collection<Item> getItemsOfClass(int classId)
+    public Collection<Item> getAllowedItems(Collection<Item> forbiddenItems, Collection<Item> pickedItems, double weightLimit)
     {
-        return items.stream().filter((item -> item.getClassId() == classId)).collect(Collectors.toList());
+        return items.stream().
+                filter((item) -> !forbiddenItems.contains(item) && !pickedItems.contains(item) && item.getWeight() <= weightLimit)
+                .collect(Collectors.toList());
     }
 
     public static ItemsContainerBuilder builder()
     {
         return new ItemsContainerBuilder();
+    }
+
+    public Collection<Item> getBestItems(Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack)
+    {
+        return items.stream().
+                filter((item -> !forbiddenItems.contains(item) && !itemsInKnapsack.contains(item)))
+                .collect(Collectors.toList());
     }
 
     public static class ItemsContainerBuilder
@@ -43,20 +51,13 @@ public class ItemsContainer
             return this;
         }
 
-        // TODO: refactor this terrible method
-        public ItemsContainer build(double minCostToWeight, double maxCostToWeight, double minWeightAndCapacity, double maxWeightAndCapacity, double minCost, double maxCost)
-        {
-            Collections.sort(itemsContainer.items, (item1, item2) ->
-            {
-                double costSummand1 = normalizeDouble(item1.getCostToWeight(), minCostToWeight, maxCostToWeight) + normalizeDouble(item1.getCost(), minCost, maxCost);
-                double weightSummand1 = normalizeDouble(item1.getWeightAndCapacity(), minWeightAndCapacity, maxWeightAndCapacity);
-                double costSummand2 = normalizeDouble(item2.getCostToWeight(), minCostToWeight, maxCostToWeight) + normalizeDouble(item2.getCost(), minCost, maxCost);
-                double weightSummand2 = normalizeDouble(item2.getWeightAndCapacity(), minWeightAndCapacity, maxWeightAndCapacity);
 
-                return Double.compare(costSummand2 + weightSummand2, costSummand1 + weightSummand1);
-            }
-            );
-            System.out.println(itemsContainer.items);
+        public ItemsContainer build()
+        {
+            Collections.sort(itemsContainer.items, (item1, item2) -> Double.compare(item2.getCostToWeight(), item1.getCostToWeight()));
+            log("Sorted by costtow = %s", itemsContainer.items);
+            itemsContainer.itemsAmount = itemsContainer.items.size();
+            System.out.println("Real item amount = " + itemsContainer.itemsAmount);
             return itemsContainer;
         }
 
@@ -70,5 +71,6 @@ public class ItemsContainer
 
     private ItemsContainer() {}
 
+    private int itemsAmount;
     private final List<Item> items = new ArrayList<>();
 }
