@@ -2,13 +2,6 @@ package knapsack.entities;
 
 public class Item
 {
-
-    // TODO: remove after all tests
-    public Item(int id)
-    {
-        this(0,0,false);
-    }
-
     public Item(double weight, double cost, boolean next)
     {
         this.id = idCounter++;

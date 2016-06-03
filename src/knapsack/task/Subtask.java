@@ -1,11 +1,12 @@
 package knapsack.task;
 
 import knapsack.entities.Item;
-import knapsack.entities.ItemsContainer;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 import static knapsack.Logger.log;
@@ -15,105 +16,68 @@ public class Subtask
 
     public Subtask()
     {
-        this(new HashSet<>(), new ArrayList<>());
+        this(new HashSet<>(), new ArrayList<>(), 0, 0);
     }
 
-    public Subtask(Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack)
+    public Subtask(Set<Item> forbiddenItems, Collection<Item> itemsInKnapsack, double knapsackCost, double totalWeight)
     {
         log("Subtask creation started");
         this.forbiddenItems = forbiddenItems;
         this.itemsInKnapsack = itemsInKnapsack;
         log("forbidden = %s", forbiddenItems);
         log("knapsack = %s", itemsInKnapsack);
-        Collection<Item> bestItems = TaskData.getItemsContainer().getBestItems(forbiddenItems, itemsInKnapsack);
+        long startTime = System.currentTimeMillis();
+        bestItems = CommonData.getItemsContainer().getBestItems(forbiddenItems, itemsInKnapsack);
+        long finishTime = System.currentTimeMillis();
+        logTime("getBestItems time: ", startTime, finishTime);
         log("Expensive items = %s", bestItems);
         if (bestItems.isEmpty())
         {
-            TaskData.considerSolution(new Solution(this.itemsInKnapsack));
             solved = true;
             return;
         }
 
-        for (Item item : itemsInKnapsack)
-        {
-            ceilCost += item.getCost();
-            totalWeight += item.getWeight();
-        }
+        this.knapsackCost = knapsackCost;
+        this.totalWeight = totalWeight;
 
+        this.ceilCost = knapsackCost;
         double itemsWeight = 0;
+        startTime = System.currentTimeMillis();
         for (Item item : bestItems)
         {
-            if (totalWeight + itemsWeight + item.getWeight() <= TaskData.getMaxWeight())
+            if (totalWeight + itemsWeight + item.getWeight() <= CommonData.getMaxWeight())
             {
-
                 itemsWeight += item.getWeight();
                 ceilCost += item.getCost();
             }
             else
             {
-                double fit = TaskData.getMaxWeight() - totalWeight - itemsWeight;
-
+                double fit = CommonData.getMaxWeight() - totalWeight - itemsWeight;
                 ceilCost += item.getCost() * fit / item.getWeight();
                 break;
             }
-
         }
+        finishTime = System.currentTimeMillis();
+        logTime("Ceil calculation time: ", startTime, finishTime);
     }
 
     public void execute()
     {
-        if (solved || totalWeight > TaskData.getMaxWeight())
+        do
         {
-            return;
+            if (solved || totalWeight == CommonData.getMaxWeight())
+            {
+                CommonData.considerSolution(new Solution(this.itemsInKnapsack));
+                return;
+            }
         }
-        if (totalWeight == TaskData.getMaxWeight())
-        {
-            TaskData.considerSolution(new Solution(this.itemsInKnapsack));
-            return;
-        }
-
-        if (prepareChildrenSubtasks())
-        {
-            execute();
-        }
-        else
-        {
-            TaskData.considerSolution(new Solution(itemsInKnapsack));
-        }
+        while (prepareChildrenSubtasks());
+        CommonData.considerSolution(new Solution(itemsInKnapsack));
     }
 
-    private void findAccurateSolution()
+    public double getCeilCost()
     {
-        findAccurateSolution(new HashSet<>(), 0);
-    }
-
-    private void findAccurateSolution(Collection<Item> pickedItems, double pickedWeight)
-    {
-        ItemsContainer items = TaskData.getItemsContainer();
-        double weightLimit = TaskData.getMaxWeight() - totalWeight - pickedWeight;
-        Collection<Item> allowedItems = items.getAllowedItems(forbiddenItems, pickedItems, weightLimit);
-        if (allowedItems.isEmpty())
-        {
-            return;
-        }
-
-        boolean lastItem = allowedItems.size() == 1;
-        if (lastItem)
-        {
-            Item bestItem = allowedItems.iterator().next();
-            Set<Item> knapsackPickedItems = new HashSet<>(itemsInKnapsack);
-            knapsackPickedItems.addAll(pickedItems);
-            knapsackPickedItems.add(bestItem);
-            TaskData.considerSolution(new Solution(knapsackPickedItems));
-            return;
-        }
-
-        for (Item item : allowedItems)
-        {
-            pickedItems.add(item);
-            findAccurateSolution(pickedItems, pickedWeight + item.getWeight());
-            pickedItems.remove(item);
-        }
+        return ceilCost;
     }
 
     /**
@@ -122,15 +86,23 @@ public class Subtask
      */
     private boolean prepareChildrenSubtasks()
     {
-        ItemsContainer items = TaskData.getItemsContainer();
-        Item item = items.getBestItem(forbiddenItems, itemsInKnapsack, TaskData.getMaxWeight() - totalWeight);
+        long startTime = System.currentTimeMillis();
+        Item item = getBestItem();
+        long finishTime = System.currentTimeMillis();
+        logTime("getBestItem time: ", startTime, finishTime);
         log("Selected best item = %s", item);
         if (item == null)
         {
             return false;
         }
+        startTime = System.currentTimeMillis();
         createLeftSubtask(item);
+        finishTime = System.currentTimeMillis();
+        logTime("left subtask creation time: ", startTime, finishTime);
+        startTime = System.currentTimeMillis();
         modifyToRightSubtask(item);
+        finishTime = System.currentTimeMillis();
+        logTime("right subtask modification time: ", startTime, finishTime);
         return true;
     }
 
@@ -139,29 +111,45 @@ public class Subtask
         Set<Item> leftSubtaskForbiddenItems = new HashSet<>(forbiddenItems);
         Set<Item> leftSubtaskItemsInKnapsack = new HashSet<>(itemsInKnapsack);
         leftSubtaskForbiddenItems.add(item);
-        Subtask leftSubtask = new Subtask(leftSubtaskForbiddenItems, leftSubtaskItemsInKnapsack);
-        TaskData.addSubtask(leftSubtask);
+        Subtask leftSubtask = new Subtask(leftSubtaskForbiddenItems, leftSubtaskItemsInKnapsack, knapsackCost, totalWeight);
+        CommonData.addSubtask(leftSubtask);
     }
 
     private void modifyToRightSubtask(Item item)
     {
         itemsInKnapsack.add(item);
+        knapsackCost += item.getCost();
         totalWeight += item.getWeight();
     }
 
-    public double getCeilCost()
+    private Item getBestItem()
     {
-        return ceilCost;
+        ListIterator<Item> iterator = bestItems.listIterator();
+        while (iterator.hasNext())
+        {
+            Item item = iterator.next();
+            iterator.remove();
+            if (item.getWeight() <= CommonData.getMaxWeight() - totalWeight)
+            {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    private void logTime(String message, long start, long finish)
+    {
+        //System.out.println(message + (finish - start));
     }
 
     private final Set<Item> forbiddenItems;
 
     private double ceilCost = 0;
     private double totalWeight;
+    private double knapsackCost;
 
     private final Collection<Item> itemsInKnapsack;
+    private final List<Item> bestItems;
 
     private boolean solved = false;
-
-    private static final int MIN_ITEMS_AMOUNT = 4;
 }

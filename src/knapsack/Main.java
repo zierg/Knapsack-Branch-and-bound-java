@@ -3,7 +3,7 @@ package knapsack;
 import knapsack.entities.Item;
 import knapsack.task.Solution;
 import knapsack.task.Subtask;
-import knapsack.task.TaskData;
+import knapsack.task.CommonData;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,8 +12,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static knapsack.Logger.log;
 
 public class Main
 {
@@ -24,25 +22,20 @@ public class Main
     {
         if (GENERATE_FILE)
         {
-            generateRandomFile(4000, 2500);
+            generateRandomFile(100, 20);
             System.out.println("A new file has been generated.");
         }
-        TaskData.load("task.ini");
+        CommonData.load("task.ini");
 
         long startTime = System.currentTimeMillis();
-        while (TaskData.doSubtaskExist())
+        while (CommonData.doSubtaskExist())
         {
-            Subtask best = TaskData.getBestSubtask();
+            Subtask best = CommonData.getBestSubtask();
             best.execute();
         }
         long finishTime = System.currentTimeMillis();
 
-        System.out.println(String.format("Spent time: %s ms", finishTime - startTime));
-
-        Solution bestSolution = TaskData.getBestSolution();
-
-        System.out.println("Good solutions = " + TaskData.getGoodSolutionsAmount());
-        System.out.println("Bad solutions = " + TaskData.getBadSolutionsAmount());
+        Solution bestSolution = CommonData.getBestSolution();
 
         if (bestSolution == null)
         {
@@ -50,19 +43,12 @@ public class Main
             return;
         }
 
-        System.out.println(String.format("Max weight = %s", TaskData.getMaxWeight()));
-        System.out.println("The best solution has been found.");
-        System.out.println(String.format("Cost: %s", bestSolution.getCost()));
-
-        double solutionWeight = 0;
-
         List<Item> sorted = bestSolution.getItems().stream().sorted((item1, item2) -> Integer.compare(item1.getRealId(), item2.getRealId())).collect(Collectors.toList());
         Item previousItem = sorted.get(0);
         int itemAmount = 0;
         int previousRealId = previousItem.getRealId();
         for (Item item : sorted)
         {
-            solutionWeight += item.getWeight();
 
             if (item.getRealId() == previousRealId)
             {
@@ -76,7 +62,17 @@ public class Main
         }
         printItem(previousItem, itemAmount);
 
-        System.out.println("Solution weight = " + solutionWeight);
+
+        System.out.println("The best solution has been found.");
+        System.out.println(String.format("Max weight = %s", CommonData.getMaxWeight()));
+        System.out.println("Solution weight = " + bestSolution.getWeight());
+        System.out.println(String.format("Cost: %s", bestSolution.getCost()));
+
+        System.out.println(String.format("Spent time: %s ms", finishTime - startTime));
+        System.out.println("Good solutions = " + CommonData.getGoodSolutionsAmount());
+        System.out.println("Bad solutions = " + CommonData.getBadSolutionsAmount());
+
+
     }
 
     private static void printItem(Item item, int amount)
@@ -97,7 +93,7 @@ public class Main
         otherSymbols.setDecimalSeparator('.');
         DecimalFormat myFormatter = new DecimalFormat("###", otherSymbols);
         final double COST_MAX = 30;
-        final double WEIGHT_MAX = maxWeight / ((double) itemsAmount) * 20;
+        final double WEIGHT_MAX = 50;
         StringBuilder b = new StringBuilder("MAX_WEIGHT=").append(maxWeight).append("\nITEMS=");
         for (int i = 0; i < itemsAmount; i++)
         {

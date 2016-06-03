@@ -11,7 +11,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static knapsack.Logger.log;
-public class TaskData
+public class CommonData
 {
     public static ItemsContainer getItemsContainer()
     {
@@ -23,19 +23,9 @@ public class TaskData
         return badSolutionsAmount;
     }
 
-    public static void setBadSolutionsAmount(int badSolutionsAmount)
-    {
-        TaskData.badSolutionsAmount = badSolutionsAmount;
-    }
-
     public static int getGoodSolutionsAmount()
     {
         return goodSolutionsAmount;
-    }
-
-    public static void setGoodSolutionsAmount(int goodSolutionsAmount)
-    {
-        TaskData.goodSolutionsAmount = goodSolutionsAmount;
     }
 
     public static double getMaxWeight()
@@ -78,11 +68,12 @@ public class TaskData
         if (bestSolution == null || solution.getCost() > bestSolution.getCost())
         {
             bestSolution = solution;
-            subtasks.stream().forEach((subtask -> log("Subtask before filtering. Ceil = %s", subtask.getCeilCost())));
+            if (subtasks.isEmpty())
+            {
+                return;
+            }
             Set<Subtask> bad = subtasks.stream().filter((subtask -> subtask.getCeilCost() <= solution.getCost())).collect(Collectors.toSet());
-            bad.stream().forEach((subtask -> log("Remove subtask. Ceil = %s", subtask.getCeilCost())));
             subtasks.removeAll(bad);
-            subtasks.stream().forEach((subtask -> log("Subtask left. Ceil = %s", subtask.getCeilCost())));
             goodSolutionsAmount++;
         }
         else
@@ -111,7 +102,6 @@ public class TaskData
 
             while (itemTokenizer.hasMoreTokens())
             {
-                itemsAmount++;
                 StringTokenizer parameters = new StringTokenizer(itemTokenizer.nextToken(), " ");
                 int limit = Integer.parseInt(parameters.nextToken());
                 double cost = Double.parseDouble(parameters.nextToken());
@@ -132,7 +122,6 @@ public class TaskData
         }
     }
 
-    private static int itemsAmount = 0;
     private static ItemsContainer itemsContainer;
     private static double maxWeight;
     private static Solution bestSolution;
@@ -142,5 +131,5 @@ public class TaskData
     private static int goodSolutionsAmount = 0;
     private static int badSolutionsAmount = 0;
 
-    private TaskData() {}
+    private CommonData() {}
 }

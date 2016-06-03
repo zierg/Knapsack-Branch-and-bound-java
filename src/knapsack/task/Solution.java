@@ -11,16 +11,24 @@ public class Solution
     {
         this.items = items;
         double currentCost = 0;
+        double currentWeight = 0;
         for (Item item : items)
         {
             currentCost += item.getCost();
+            currentWeight += item.getWeight();
         }
         cost = currentCost;
+        weight = currentWeight;
     }
 
     public double getCost()
     {
         return cost;
+    }
+
+    public double getWeight()
+    {
+        return weight;
     }
 
     public Collection<Item> getItems()
@@ -29,6 +37,7 @@ public class Solution
     }
 
     private final double cost;
+    private final double weight;
 
     private final Collection<Item> items;
 }
